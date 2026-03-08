@@ -1,0 +1,21 @@
+import { ChatOpenAI } from '@langchain/openai';
+import { config } from '../config/index.js';
+
+export function createChatModel(temperature: number): ChatOpenAI | null {
+  if (!config.llmApiKey) {
+    return null;
+  }
+
+  return new ChatOpenAI({
+    modelName: config.llmModel,
+    temperature,
+    openAIApiKey: config.llmApiKey,
+    configuration: {
+      baseURL: config.llmBaseUrl,
+    },
+  });
+}
+
+export function llmProviderLabel(): string {
+  return `${config.llmProvider}:${config.llmModel}`;
+}

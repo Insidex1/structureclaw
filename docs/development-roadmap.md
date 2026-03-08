@@ -115,7 +115,7 @@
 
 - 同一自然语言请求可触发多步工具调用并返回轨迹
 - 工具失败时返回结构化错误与下一步建议
-- 无 `OPENAI_API_KEY` 时具备 rule-based 降级能力
+- 无可用 LLM Key 时具备 rule-based 降级能力（`LLM_API_KEY/OPENAI_API_KEY/ZAI_API_KEY`）
 
 ## 阶段 A：统一结构数据底座（最高优先级）
 

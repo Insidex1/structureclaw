@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { ChatOpenAI } from '@langchain/openai';
 import { randomUUID } from 'crypto';
 import { config } from '../config/index.js';
+import { createChatModel } from '../utils/llm.js';
 
 export type AgentToolName = 'text-to-model-draft' | 'convert' | 'validate' | 'analyze' | 'code-check';
 export type AgentRunMode = 'chat' | 'execute' | 'auto';
@@ -75,16 +76,7 @@ export class AgentService {
       timeout: 300000,
     });
 
-    this.llm = config.openaiApiKey
-      ? new ChatOpenAI({
-          modelName: config.openaiModel,
-          temperature: 0.1,
-          openAIApiKey: config.openaiApiKey,
-          configuration: {
-            baseURL: config.openaiBaseUrl,
-          },
-        })
-      : null;
+    this.llm = createChatModel(0.1);
   }
 
   static getProtocol(): AgentProtocol {

@@ -2,7 +2,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ConversationChain } from 'langchain/chains';
 import { BufferMemory } from 'langchain/memory';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { config } from '../config/index.js';
+import { createChatModel } from '../utils/llm.js';
 import { prisma } from '../utils/database.js';
 
 // 结构工程专用提示词
@@ -51,16 +51,7 @@ export class ChatService {
   private memories: Map<string, BufferMemory>;
 
   constructor() {
-    this.llm = config.openaiApiKey
-      ? new ChatOpenAI({
-          modelName: config.openaiModel,
-          temperature: 0.3,
-          openAIApiKey: config.openaiApiKey,
-          configuration: {
-            baseURL: config.openaiBaseUrl,
-          },
-        })
-      : null;
+    this.llm = createChatModel(0.3);
     this.memories = new Map();
   }
 
@@ -98,7 +89,7 @@ export class ChatService {
       : '';
 
     if (!this.llm) {
-      const fallbackResponse = 'AI 聊天功能未配置 `OPENAI_API_KEY`，其余 API 服务可正常使用。';
+      const fallbackResponse = 'AI 聊天功能未配置 LLM API Key（支持 OPENAI_API_KEY/LLM_API_KEY/ZAI_API_KEY），其余 API 服务可正常使用。';
 
       await prisma.message.createMany({
         data: [
@@ -181,7 +172,7 @@ export class ChatService {
       }
 
       if (!this.llm) {
-        const fallbackResponse = 'AI 聊天功能未配置 `OPENAI_API_KEY`，其余 API 服务可正常使用。';
+        const fallbackResponse = 'AI 聊天功能未配置 LLM API Key（支持 OPENAI_API_KEY/LLM_API_KEY/ZAI_API_KEY），其余 API 服务可正常使用。';
 
         await prisma.message.createMany({
           data: [

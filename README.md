@@ -170,7 +170,12 @@ make logs
 用于 `docker compose`：
 
 ```bash
+LLM_PROVIDER=openai
+LLM_API_KEY=
+LLM_MODEL=
+LLM_BASE_URL=
 OPENAI_API_KEY=
+ZAI_API_KEY=
 ```
 
 ### `backend/.env`
@@ -181,12 +186,26 @@ OPENAI_API_KEY=
 - `REDIS_URL`
 - `JWT_SECRET`
 - `ANALYSIS_ENGINE_URL`
-- `OPENAI_API_KEY`
+- `LLM_PROVIDER`（`openai | zhipu | openai-compatible`）
+- `LLM_API_KEY`
+- `LLM_MODEL`
+- `LLM_BASE_URL`
+- `ZAI_API_KEY`（智谱）
+- `OPENAI_API_KEY`（兼容保留）
 
 说明：
 
-- `OPENAI_API_KEY` 是可选的，未配置时聊天接口自动降级提示
+- 未配置可用 LLM Key 时（`LLM_API_KEY/OPENAI_API_KEY/ZAI_API_KEY`），聊天接口自动降级提示
 - `REDIS_URL=disabled` 表示禁用 Redis，后端自动降级为内存缓存
+- 智谱示例（兼容 OpenAI 接口）：
+```bash
+LLM_PROVIDER=zhipu
+ZAI_API_KEY=your-zhipu-key
+# 可选覆盖
+# LLM_MODEL=glm-4-plus
+# LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
+```
+参考文档：`https://docs.bigmodel.cn/cn/guide/start/introduction`
 
 ### Prisma 初始化
 

@@ -4,6 +4,18 @@ dotenv.config();
 
 const redisUrlRaw = process.env.REDIS_URL;
 const redisEnabled = redisUrlRaw && redisUrlRaw.toLowerCase() !== 'disabled';
+const llmProviderRaw = (process.env.LLM_PROVIDER || 'openai').toLowerCase();
+const llmProvider = ['openai', 'zhipu', 'openai-compatible'].includes(llmProviderRaw)
+  ? llmProviderRaw
+  : 'openai';
+const isZhipu = llmProvider === 'zhipu';
+const llmApiKey = process.env.LLM_API_KEY
+  || (isZhipu ? process.env.ZAI_API_KEY : process.env.OPENAI_API_KEY)
+  || '';
+const llmModel = process.env.LLM_MODEL
+  || (isZhipu ? 'glm-4-plus' : (process.env.OPENAI_MODEL || 'gpt-4-turbo-preview'));
+const llmBaseUrl = process.env.LLM_BASE_URL
+  || (isZhipu ? 'https://open.bigmodel.cn/api/paas/v4/' : (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'));
 
 export const config = {
   // 服务配置
@@ -22,6 +34,12 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
 
   // AI 配置
+  llmProvider,
+  llmApiKey,
+  llmModel,
+  llmBaseUrl,
+
+  // 兼容保留：旧 OpenAI 字段
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiModel: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
   openaiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
