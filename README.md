@@ -1,8 +1,28 @@
 # StructureClaw
 
-> 开源建筑结构分析与设计平台原型，包含 Web 前端、Node.js API 和 Python 分析引擎。
+> 面向 AEC（Architecture, Engineering, Construction）行业的智能结构设计与分析助手平台。
 
-## 当前状态
+## 项目概述
+
+StructureClaw 是一个“LLM + 工程计算工具链”的多服务系统，目标是把结构工程常见流程串成统一闭环：
+
+- 自然语言需求输入
+- 结构模型生成/转换/校验
+- 结构分析与规范校核
+- 可追溯报告输出与执行指标观测
+
+当前仓库已具备可联调的工程化 MVP，适合本地开发、接口集成、回归验证与后续扩展。
+
+## 核心特性
+
+- `🤖 Agent 编排闭环`: `text-to-model-draft -> convert -> validate -> analyze -> code-check -> report`
+- `🔁 Chat/Execute 双模式`: `chat | execute | auto` 路由，支持同步与 SSE 流式
+- `🧩 会话级缺参澄清`: 基于 `conversationId` 的多轮补参与状态延续
+- `📊 可观测执行结果`: `traceId/startedAt/completedAt/durationMs` + 工具耗时聚合指标
+- `🧱 统一结构模型`: `StructureModel v1` + 校验 + 转换 + `v1.x` 迁移骨架
+- `📄 报告导出`: 支持 JSON/Markdown，`reportOutput=file` 可落盘到 `uploads/reports`
+
+## 当前状态（MVP）
 
 这个仓库目前已经整理成可运行的多服务原型，包含：
 
@@ -11,18 +31,38 @@
 - `core`: FastAPI 结构分析引擎
 - `docker-compose.yml`: 编排数据库、缓存、前后端和 Nginx
 
-目前更接近“可运行的项目骨架”而不是完整产品，部分接口是可用的最小实现，用于保证工程链路能跑通。
+目前更接近“可运行的工程化 MVP”而不是完整产品，部分模块仍是最小实现，但核心开发链路已可跑通并可回归。
 
 ## 技术架构
 
 ```text
-Browser
-  -> Next.js frontend (:3000)
-  -> Agent Orchestration (/api/v1/agent/run)
-  -> Fastify backend (:8000)
-  -> FastAPI analysis engine (:8001)
-  -> PostgreSQL / Redis
-  -> Nginx reverse proxy (Docker only)
+┌───────────────────────────────────────────────────────────────┐
+│                       StructureClaw                           │
+├───────────────────────────────────────────────────────────────┤
+│ Frontend (Next.js 14)            │ API Layer (Fastify)        │
+│ - React 18                        │ - TypeScript               │
+│ - Tailwind CSS                    │ - Prisma ORM               │
+│ - 调试控制台 (/console)           │ - Agent/Chat/Project 等路由│
+├───────────────────────────────────────────────────────────────┤
+│ Core Engine (FastAPI, Python 3.11+)                          │
+│ - StructureModel schema/validate/convert                     │
+│ - analyze / code-check / design                              │
+├───────────────────────────────────────────────────────────────┤
+│ Data & Runtime                                                │
+│ - PostgreSQL (业务数据)                                       │
+│ - Redis/内存降级缓存                                           │
+│ - Docker Compose / Make / sclaw CLI                          │
+└───────────────────────────────────────────────────────────────┘
+```
+
+请求主链路：
+
+```text
+Browser/UI
+  -> /api/v1/chat/message|stream|execute 或 /api/v1/agent/run
+  -> Backend AgentService
+  -> Core /validate /convert /analyze /code-check
+  -> Report + Metrics + Artifacts
 ```
 
 ## 目录结构
@@ -149,6 +189,18 @@ make start
 make status
 make stop
 make logs
+```
+
+后端回归（CI 同步入口）：
+
+```bash
+make backend-regression
+```
+
+Core 回归：
+
+```bash
+make core-regression
 ```
 
 启动后访问：
@@ -293,6 +345,16 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 - `GET /api/v1/community/*`
 - `GET /api/v1/analysis/*`
 
+常用端点（建议优先调试）：
+
+- `GET /api/v1/agent/tools`
+- `POST /api/v1/agent/run`
+- `POST /api/v1/chat/message`
+- `POST /api/v1/chat/stream`
+- `POST /api/v1/chat/execute`
+- `GET /health`
+- `GET /docs`
+
 ### Core
 
 - `GET /`
@@ -318,10 +380,10 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 适合下一步继续完善的方向：
 
-1. 为后端补充 Prisma migration 和初始化 seed
-2. 为主要 API 增加自动化测试
-3. 给前端补更多真实页面，而不仅是首页
-4. 把当前最小实现逐步替换成真实业务逻辑
+1. 补齐 3D 静力线弹性能力与黄金算例回归（阶段 B 深化）
+2. 接入首个外部工程格式转换器（阶段 C）
+3. 增强报告模板（结构化章节、可读性与可追溯展示）
+4. 持续收敛 Agent 工具协议与观测指标（面向生产可运维）
 
 ## 许可证
 
