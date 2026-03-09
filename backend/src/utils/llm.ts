@@ -9,6 +9,8 @@ export function createChatModel(temperature: number): ChatOpenAI | null {
   return new ChatOpenAI({
     modelName: config.llmModel,
     temperature,
+    timeout: config.llmTimeoutMs,
+    maxRetries: config.llmMaxRetries,
     openAIApiKey: config.llmApiKey,
     configuration: {
       baseURL: config.llmBaseUrl,
