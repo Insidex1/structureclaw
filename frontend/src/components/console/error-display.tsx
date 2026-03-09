@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,20 +17,45 @@ interface ErrorDisplayProps {
  * ErrorDisplay - Error state visualization component
  *
  * CONS-15: User receives clear error messages when execution fails
+ * ACCS-02: Focus moves to error container when error appears
  *
  * Displays error messages with destructive styling when present.
  * Returns null when no error is provided.
+ *
+ * Accessibility features:
+ * - role="alert" for screen reader announcement
+ * - aria-live="assertive" for immediate announcement
+ * - tabIndex={-1} allows programmatic focus
+ * - Focus is automatically moved to error when it appears
  */
 export function ErrorDisplay({ error, className }: ErrorDisplayProps) {
+  const alertRef = useRef<HTMLDivElement>(null)
+
+  // Focus the alert when error appears (accessibility)
+  useEffect(() => {
+    if (error && alertRef.current) {
+      alertRef.current.focus()
+    }
+  }, [error])
+
   if (!error) {
     return null
   }
 
   return (
-    <Card className={cn('bg-destructive/10 border-destructive/20', className)}>
+    <Card
+      ref={alertRef}
+      role="alert"
+      aria-live="assertive"
+      tabIndex={-1}
+      className={cn('bg-destructive/10 border-destructive/20', className)}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertCircle
+            className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-destructive">Error</p>
             <p className="text-sm mt-1 text-destructive/90">{error.message}</p>
