@@ -20,21 +20,25 @@ describe('ArtifactsList (CONS-11)', () => {
   })
 
   it('renders all artifacts when provided', () => {
-    render(<ArtifactsList artifacts={sampleArtifacts} />)
+    const { container } = render(<ArtifactsList artifacts={sampleArtifacts} />)
 
     expect(screen.getByText('Artifacts')).toBeInTheDocument()
-    expect(screen.getByText(/markdown/)).toBeInTheDocument()
-    expect(screen.getByText(/\/output\/report\.md/)).toBeInTheDocument()
-    expect(screen.getByText(/json/)).toBeInTheDocument()
-    expect(screen.getByText(/\/output\/data\.json/)).toBeInTheDocument()
+    // Text is split across spans, so check for text content presence
+    expect(container.textContent).toContain('markdown')
+    expect(container.textContent).toContain('/output/report.md')
+    expect(container.textContent).toContain('json')
+    expect(container.textContent).toContain('/output/data.json')
   })
 
   it('displays format and path for each artifact', () => {
-    render(<ArtifactsList artifacts={sampleArtifacts} />)
+    const { container } = render(<ArtifactsList artifacts={sampleArtifacts} />)
 
-    // Check that format: path pattern is displayed
-    expect(screen.getByText(/markdown.*\/output\/report\.md/)).toBeInTheDocument()
-    expect(screen.getByText(/json.*\/output\/data\.json/)).toBeInTheDocument()
+    // Check that each list item contains both format and path
+    const listItems = container.querySelectorAll('li')
+    expect(listItems[0].textContent).toContain('markdown')
+    expect(listItems[0].textContent).toContain('/output/report.md')
+    expect(listItems[1].textContent).toContain('json')
+    expect(listItems[1].textContent).toContain('/output/data.json')
   })
 
   it('renders artifacts in a list structure', () => {
