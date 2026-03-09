@@ -91,6 +91,7 @@
 - 已补充批量工况明细包络表：按节点位移、按单元内力、按节点反力的控制值与控制工况
 - 已接入格式转换 round-trip 回归：`structuremodel-v1 -> simple-1 -> structuremodel-v1`
 - 已接入 `midas-text-1` 转换器回归：导入/导出 + 字段级错误定位
+- 已接入转换器 API 契约回归：`/schema/converters` 与 `/convert` 错误码契约
 - 已接入 round-trip 通过率校验脚本：`scripts/validate-convert-passrate.sh`（阈值 95%）
 
 ---

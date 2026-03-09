@@ -173,6 +173,7 @@ make dev-core-lite
 - 输出位移、内力、反力与控制包络
 - 支持转换 round-trip 与通过率校验
 - 格式转换已支持 `midas-text-1` 最小子集（节点/单元/材料/截面/节点荷载/组合）
+- 已覆盖转换器 API 契约回归（`/schema/converters` 与 `/convert` 错误码）
 
 ### 5.5 业务模块 API（Backend）
 

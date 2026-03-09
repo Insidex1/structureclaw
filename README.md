@@ -218,6 +218,7 @@ make core-regression
 - 批量转换验证脚本：`scripts/validate-convert-batch.sh`
 - Schema 迁移验证脚本：`scripts/validate-schema-migration.sh`
 - 转换通过率验证脚本：`scripts/validate-convert-passrate.sh`
+- 转换器 API 契约脚本：`scripts/validate-converter-api-contract.sh`
 - 后端回归入口脚本：`scripts/check-backend-regression.sh`
 
 ## 环境变量

@@ -35,6 +35,10 @@ echo "==> Midas-text converter"
 ./scripts/validate-midas-text-converter.sh
 
 echo
+echo "==> Converter API contract"
+./scripts/validate-converter-api-contract.sh
+
+echo
 echo "==> Schema migration"
 ./scripts/validate-schema-migration.sh
 
