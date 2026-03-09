@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md (API Client)
-last_updated: "2026-03-09T15:50:00.000Z"
-last_activity: "2026-03-09 — Completed 04-02: API Client"
+stopped_at: Completed 04-01-PLAN.md (SSR-Safe Store Factory)
+last_updated: "2026-03-09T15:51:00.000Z"
+last_activity: "2026-03-09 — Completed 04-01: SSR-Safe Store Factory"
 progress:
   total_phases: 6
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Beautiful, professional, easy-to-use structural engineering AI workbench
-**Current focus:** Layout System
+**Current focus:** State & API Layer
 
 ## Current Position
 
 Phase: 4 of 6 (State & API Layer) - IN PROGRESS
-Plan: 2 of 3 in current phase
+Plan: 1 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-09 — Completed 04-02: API Client
+Last activity: 2026-03-09 — Completed 04-01: SSR-Safe Store Factory
 
 Progress: [██████░░░░] 64%
 
@@ -106,6 +106,9 @@ Recent decisions affecting current work:
 - [03-03]: SplitPanel uses minSize=30 to prevent panels from collapsing too much
 - [Phase 03-layout-system]: Use route groups (marketing) and (console) for layout separation without affecting URL structure
 - [Phase 03-layout-system]: Console layout uses async server component for cookie-based sidebar state persistence
+- [04-01]: Use createStore from zustand/vanilla with React Context for SSR safety
+- [04-01]: Use useRef in provider to ensure single store instance per provider mount
+- [04-01]: Support custom initial state override in createAppStore for flexibility
 - [04-02]: Use typed error classes (ApiError, NetworkError) extending native Error for proper instanceof checks
 - [04-02]: Wrap fetch failures in NetworkError, HTTP errors in ApiError with optional response data
 - [04-02]: Provide convenience methods (api.get/post/put/delete) for common HTTP verbs
