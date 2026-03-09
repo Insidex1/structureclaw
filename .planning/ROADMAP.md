@@ -13,8 +13,8 @@ This roadmap transforms StructureClaw from a debug-style interface into a polish
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Design System Foundation** - Establish visual language with tokens, fonts, and theme support
-- [ ] **Phase 2: Component Library** - Build reusable UI primitives with shadcn/ui patterns
-- [ ] **Phase 3: Layout System** - Create responsive app shell with sidebar and header
+- [x] **Phase 2: Component Library** - Build reusable UI primitives with shadcn/ui patterns
+- [x] **Phase 3: Layout System** - Create responsive app shell with sidebar and header
 - [x] **Phase 4: State & API Layer** - Implement Zustand stores and API client with SSE support (completed 2026-03-09)
 - [ ] **Phase 5: Console Feature** - Rebuild the core console with all existing functionality
 - [ ] **Phase 6: Pages & Accessibility** - Compose pages and validate keyboard/ARIA support
@@ -90,9 +90,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 04-01: Zustand store factory setup (STAT-01)
-- [ ] 04-02: API client with contract tests (STAT-02)
-- [ ] 04-03: SSE streaming hook with lifecycle management (STAT-03, STAT-04)
+- [x] 04-01: Zustand store factory setup (STAT-01)
+- [x] 04-02: API client with contract tests (STAT-02)
+- [x] 04-03: SSE streaming hook with lifecycle management (STAT-03, STAT-04)
 
 ### Phase 5: Console Feature
 **Goal**: Deliver the complete console experience with all existing functionality in the new design
@@ -114,8 +114,8 @@ Plans:
 - [x] 05-00: Wave 0 - Test infrastructure and shadcn/ui components (Wave 0)
 - [x] 05-01: Console input controls (endpoint, mode, message, model JSON) (Wave 1)
 - [x] 05-02: Configuration panel and execution hook (CONS-05, CONS-06, CONS-07, CONS-12) (Wave 2)
-- [ ] 05-03: Result display (CONS-08, CONS-09, CONS-10, CONS-17) (Wave 3)
-- [ ] 05-04: Artifacts and debug output (CONS-11, CONS-14) (Wave 3)
+- [x] 05-03: Result display (CONS-08, CONS-09, CONS-10, CONS-17) (Wave 3)
+- [x] 05-04: Artifacts and debug output (CONS-11, CONS-14) (Wave 3)
 - [ ] 05-05: Status indicator and console page (CONS-13) (Wave 4)
 - [ ] 05-06: Error states and clarification prompts (CONS-15, CONS-16) (Wave 5)
 
@@ -148,7 +148,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Component Library | 5/5 | Complete | 2026-03-09 |
 | 3. Layout System | 3/3 | Complete | 2026-03-09 |
 | 4. State & API Layer | 3/3 | Complete    | 2026-03-09 |
-| 5. Console Feature | 3/7 | In progress | - |
+| 5. Console Feature | 5/7 | In progress | - |
 | 6. Pages & Accessibility | 0/4 | Not started | - |
 
 ---
