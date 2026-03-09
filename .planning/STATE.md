@@ -88,6 +88,8 @@ Recent decisions affecting current work:
 - [02-01]: Use @testing-library/user-event for realistic user interaction testing
 - [Phase 02-component-library]: Use @radix-ui/react-dialog for accessible modal dialogs with built-in focus management
 - [Phase 02-component-library]: Use Sonner library for toast notifications with bottom-right positioning and theme support
+- [02-03]: Use @radix-ui/react-slot for asChild pattern enabling polymorphic Button rendering
+- [02-03]: Test focus-visible classes as focus-visible:ring-ring (combined class, not separate)
 
 ### Pending Todos
 
@@ -99,8 +101,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T14:09:54.699Z
-Stopped at: Completed 02-02-PLAN.md (Dialog/Modal and Toast)
+Last session: 2026-03-09T14:08:00Z
+Stopped at: Completed 02-03-PLAN.md (Button & Card Testing)
 Resume file: None
 
 ---
