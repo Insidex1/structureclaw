@@ -35,8 +35,8 @@ Frontend rewrite requirements, all implemented in v1.
 
 - [x] **LAYT-01**: Responsive sidebar navigation
 - [x] **LAYT-02**: Top status bar
-- [ ] **LAYT-03**: Route grouping (marketing/console)
-- [ ] **LAYT-04**: Root layout Provider wrapping
+- [x] **LAYT-03**: Route grouping (marketing/console)
+- [x] **LAYT-04**: Root layout Provider wrapping
 - [x] **LAYT-05**: Draggable split panel layout
 
 ### Pages
@@ -129,8 +129,8 @@ Which phase covers which requirement. Updated during roadmap creation.
 | COMP-11 | Phase 2 | Complete |
 | LAYT-01 | Phase 3 | Complete |
 | LAYT-02 | Phase 3 | Complete |
-| LAYT-03 | Phase 3 | Pending |
-| LAYT-04 | Phase 3 | Pending |
+| LAYT-03 | Phase 3 | Complete |
+| LAYT-04 | Phase 3 | Complete |
 | LAYT-05 | Phase 3 | Complete |
 | STAT-01 | Phase 4 | Pending |
 | STAT-02 | Phase 4 | Pending |
