@@ -24,6 +24,8 @@ const run = async () => {
     captured.push(params);
     return {
       traceId: 'trace-api-contract',
+      startedAt: '2026-03-09T00:00:00.000Z',
+      completedAt: '2026-03-09T00:00:00.012Z',
       durationMs: 12,
       success: true,
       mode: 'rule-based',
@@ -40,7 +42,14 @@ const run = async () => {
         json: { k: 'v' },
       },
       artifacts: [{ type: 'report', format: 'json', path: '/tmp/report.json' }],
-      metrics: { toolCount: 3, failedToolCount: 0 },
+      metrics: {
+        toolCount: 3,
+        failedToolCount: 0,
+        totalToolDurationMs: 10,
+        averageToolDurationMs: 3.3,
+        maxToolDurationMs: 5,
+        toolDurationMsByName: { validate: 2, analyze: 3, report: 5 },
+      },
     };
   };
 
@@ -71,8 +80,11 @@ const run = async () => {
   assert(runResp.statusCode === 200, 'agent/run should return 200');
   const runPayload = runResp.json();
   assert(runPayload.traceId === 'trace-api-contract', 'agent/run should return traceId');
+  assert(typeof runPayload.startedAt === 'string', 'agent/run should return startedAt');
+  assert(typeof runPayload.completedAt === 'string', 'agent/run should return completedAt');
   assert(Array.isArray(runPayload.toolCalls), 'agent/run should include toolCalls');
   assert(runPayload.metrics?.toolCount === 3, 'agent/run should include metrics');
+  assert(runPayload.metrics?.maxToolDurationMs === 5, 'agent/run should include expanded metrics');
 
   const execResp = await app.inject({
     method: 'POST',

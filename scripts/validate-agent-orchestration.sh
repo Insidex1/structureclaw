@@ -20,7 +20,7 @@ const run = async () => {
   // 0) protocol metadata
   {
     const protocol = AgentService.getProtocol();
-    assert(protocol.version === '1.2.0', 'protocol version should be 1.2.0');
+    assert(protocol.version === '1.3.0', 'protocol version should be 1.3.0');
     assert(Array.isArray(protocol.tools) && protocol.tools.length >= 3, 'protocol tools should be present');
     assert(protocol.runRequestSchema?.type === 'object', 'runRequestSchema should be json schema object');
     assert(protocol.runResultSchema?.type === 'object', 'runResultSchema should be json schema object');
@@ -107,6 +107,9 @@ const run = async () => {
     assert(result.toolCalls.some((c) => c.tool === 'report'), 'report should be generated');
     assert(result.report && result.report.summary, 'report payload should exist');
     assert(result.metrics?.toolCount >= 2, 'tool metrics should be present');
+    assert(typeof result.startedAt === 'string' && typeof result.completedAt === 'string', 'run timestamps should be present');
+    assert(result.metrics?.totalToolDurationMs >= 0, 'total tool duration metrics should be present');
+    assert(typeof result.metrics?.toolDurationMsByName === 'object', 'toolDurationMsByName should be present');
     console.log('[ok] agent success orchestration');
   }
 
@@ -144,6 +147,7 @@ const run = async () => {
       events.push(chunk.type);
       if (chunk.type === 'start') {
         streamTraceId = chunk.content.traceId;
+        assert(typeof chunk.content.startedAt === 'string', 'stream start should include startedAt');
       }
       if (chunk.type === 'result') {
         resultTraceId = chunk.content.traceId;

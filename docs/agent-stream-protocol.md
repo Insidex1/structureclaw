@@ -1,6 +1,6 @@
 # Agent Stream Protocol
 
-最后更新：2026-03-08
+最后更新：2026-03-09
 
 ## 1. 目标
 
@@ -40,7 +40,15 @@
 ### 3.1 `start`
 
 ```json
-{ "type": "start", "content": { "mode": "execute" } }
+{
+  "type": "start",
+  "content": {
+    "traceId": "4c5ac6de-6bbf-4d81-8a5f-5ef6f61391d0",
+    "mode": "execute",
+    "conversationId": "conv-001",
+    "startedAt": "2026-03-09T02:00:00.000Z"
+  }
+}
 ```
 
 ### 3.2 `result`
@@ -49,6 +57,10 @@
 {
   "type": "result",
   "content": {
+    "traceId": "4c5ac6de-6bbf-4d81-8a5f-5ef6f61391d0",
+    "startedAt": "2026-03-09T02:00:00.000Z",
+    "completedAt": "2026-03-09T02:00:00.187Z",
+    "durationMs": 187,
     "success": true,
     "mode": "rule-based",
     "needsModelInput": false,

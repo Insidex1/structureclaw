@@ -252,7 +252,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 说明：
 
 - 在当前机器上 Docker daemon 无访问权限，因此未能在本机完成 `make local-up` 的全链路实启；如你的环境 Docker 可用，该流程应可直接跑通。
-- 前端 `next build` 在当前文件系统上触发 `EXDEV`（跨设备 rename）错误；这通常与宿主文件系统挂载方式有关，不影响 `next dev` 本地开发启动。
+- 前端构建已通过 `frontend/scripts/fs-rename-fallback.cjs` 规避当前文件系统上的 `EXDEV`（跨设备 rename）问题，`make doctor` 可完成可选 `next build` 检查。
 - 当前沙箱不允许本地监听端口，因此这里未直接完成 `uvicorn` 端口绑定验证；已通过导入和分析调用确认 `core` 进程本身可启动。
 
 ## 当前已实现的主要接口

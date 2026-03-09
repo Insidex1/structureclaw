@@ -91,6 +91,8 @@ export interface AgentToolCall {
 
 export interface AgentRunResult {
   traceId: string;
+  startedAt: string;
+  completedAt: string;
   durationMs: number;
   success: boolean;
   mode: 'rule-based' | 'llm-assisted';
@@ -113,6 +115,10 @@ export interface AgentRunResult {
   metrics?: {
     toolCount: number;
     failedToolCount: number;
+    totalToolDurationMs: number;
+    averageToolDurationMs: number;
+    maxToolDurationMs: number;
+    toolDurationMsByName: Record<string, number>;
   };
   clarification?: {
     missingFields: string[];
@@ -152,7 +158,7 @@ export class AgentService {
     ];
 
     return {
-      version: '1.2.0',
+      version: '1.3.0',
       runRequestSchema: {
         type: 'object',
         required: ['message'],
@@ -180,10 +186,12 @@ export class AgentService {
       },
       runResultSchema: {
         type: 'object',
-        required: ['traceId', 'durationMs', 'success', 'mode', 'needsModelInput', 'plan', 'toolCalls', 'response'],
+        required: ['traceId', 'startedAt', 'completedAt', 'durationMs', 'success', 'mode', 'needsModelInput', 'plan', 'toolCalls', 'response'],
         properties: {
           success: { type: 'boolean' },
           traceId: { type: 'string' },
+          startedAt: { type: 'string' },
+          completedAt: { type: 'string' },
           durationMs: { type: 'number' },
           mode: { enum: ['rule-based', 'llm-assisted'] },
           needsModelInput: { type: 'boolean' },
@@ -206,6 +214,13 @@ export class AgentService {
             properties: {
               toolCount: { type: 'number' },
               failedToolCount: { type: 'number' },
+              totalToolDurationMs: { type: 'number' },
+              averageToolDurationMs: { type: 'number' },
+              maxToolDurationMs: { type: 'number' },
+              toolDurationMsByName: {
+                type: 'object',
+                additionalProperties: { type: 'number' },
+              },
             },
           },
           response: { type: 'string' },
@@ -217,7 +232,15 @@ export class AgentService {
             type: 'object',
             properties: {
               type: { const: 'start' },
-              content: { type: 'object' },
+              content: {
+                type: 'object',
+                properties: {
+                  traceId: { type: 'string' },
+                  mode: { enum: ['chat', 'execute', 'auto'] },
+                  conversationId: { type: 'string' },
+                  startedAt: { type: 'string' },
+                },
+              },
             },
             required: ['type'],
           },
@@ -389,6 +412,7 @@ export class AgentService {
 
   async *runStream(params: AgentRunParams): AsyncGenerator<AgentStreamChunk> {
     const traceId = randomUUID();
+    const startedAt = new Date().toISOString();
     try {
       yield {
         type: 'start',
@@ -396,6 +420,7 @@ export class AgentService {
           traceId,
           mode: params.mode || 'auto',
           conversationId: params.conversationId,
+          startedAt,
         },
       };
 
@@ -414,23 +439,23 @@ export class AgentService {
   }
 
   private async runInternal(params: AgentRunParams, traceId: string): Promise<AgentRunResult> {
-    const startedAt = Date.now();
+    const startedAtMs = Date.now();
+    const startedAt = new Date(startedAtMs).toISOString();
 
     const runMode: AgentRunMode = params.mode || 'auto';
     if (runMode === 'chat') {
       const response = await this.renderSummary(params.message, '已收到你的问题。当前为纯聊天模式，未触发结构工具调用。');
       return {
         traceId,
-        durationMs: Date.now() - startedAt,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAtMs,
         success: true,
         mode: this.llm ? 'llm-assisted' : 'rule-based',
         needsModelInput: false,
         plan: ['纯聊天模式：不调用结构工具'],
         toolCalls: [],
-        metrics: {
-          toolCount: 0,
-          failedToolCount: 0,
-        },
+        metrics: this.buildMetrics([]),
         response,
       };
     }
@@ -475,7 +500,9 @@ export class AgentService {
         const question = this.buildClarificationQuestion(draft.missingFields);
         const result: AgentRunResult = {
           traceId,
-          durationMs: Date.now() - startedAt,
+          startedAt,
+          completedAt: new Date().toISOString(),
+          durationMs: Date.now() - startedAtMs,
           success: false,
           mode,
           needsModelInput: true,
@@ -518,7 +545,9 @@ export class AgentService {
         this.completeToolCallError(convertCall, error);
         const result: AgentRunResult = {
           traceId,
-          durationMs: Date.now() - startedAt,
+          startedAt,
+          completedAt: new Date().toISOString(),
+          durationMs: Date.now() - startedAtMs,
           success: false,
           mode,
           needsModelInput: false,
@@ -546,7 +575,9 @@ export class AgentService {
         validateCall.error = validated.data?.message || '模型校验失败';
         const result: AgentRunResult = {
           traceId,
-          durationMs: Date.now() - startedAt,
+          startedAt,
+          completedAt: new Date().toISOString(),
+          durationMs: Date.now() - startedAtMs,
           success: false,
           mode,
           needsModelInput: false,
@@ -563,7 +594,9 @@ export class AgentService {
       this.completeToolCallError(validateCall, error);
       const result: AgentRunResult = {
         traceId,
-        durationMs: Date.now() - startedAt,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAtMs,
         success: false,
         mode,
         needsModelInput: false,
@@ -584,7 +617,9 @@ export class AgentService {
       );
       const result: AgentRunResult = {
         traceId,
-        durationMs: Date.now() - startedAt,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAtMs,
         success: true,
         mode,
         needsModelInput: false,
@@ -643,7 +678,9 @@ export class AgentService {
           this.completeToolCallError(codeCheckCall, error);
           const result: AgentRunResult = {
             traceId,
-            durationMs: Date.now() - startedAt,
+            startedAt,
+            completedAt: new Date().toISOString(),
+            durationMs: Date.now() - startedAtMs,
             success: false,
             mode,
             needsModelInput: false,
@@ -691,7 +728,9 @@ export class AgentService {
 
       const result: AgentRunResult = {
         traceId,
-        durationMs: Date.now() - startedAt,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAtMs,
         success: analysisSuccess,
         mode,
         needsModelInput: false,
@@ -711,7 +750,9 @@ export class AgentService {
       this.completeToolCallError(analyzeCall, error);
       const result: AgentRunResult = {
         traceId,
-        durationMs: Date.now() - startedAt,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAtMs,
         success: false,
         mode,
         needsModelInput: false,
@@ -1316,10 +1357,25 @@ export class AgentService {
     return `请继续补充以下信息：${missingFields.join('、')}。我会沿用你前一轮已提供的参数继续建模。`;
   }
 
-  private buildMetrics(toolCalls: AgentToolCall[]): { toolCount: number; failedToolCount: number } {
+  private buildMetrics(toolCalls: AgentToolCall[]): NonNullable<AgentRunResult['metrics']> {
+    const durations = toolCalls
+      .map((call) => call.durationMs || 0)
+      .filter((duration) => Number.isFinite(duration) && duration >= 0);
+    const totalToolDurationMs = durations.reduce((sum, duration) => sum + duration, 0);
+    const maxToolDurationMs = durations.length > 0 ? Math.max(...durations) : 0;
+    const toolDurationMsByName: Record<string, number> = {};
+    for (const call of toolCalls) {
+      const duration = call.durationMs || 0;
+      toolDurationMsByName[call.tool] = (toolDurationMsByName[call.tool] || 0) + duration;
+    }
+
     return {
       toolCount: toolCalls.length,
       failedToolCount: toolCalls.filter((call) => call.status === 'error').length,
+      totalToolDurationMs,
+      averageToolDurationMs: durations.length > 0 ? totalToolDurationMs / durations.length : 0,
+      maxToolDurationMs,
+      toolDurationMsByName,
     };
   }
 

@@ -1,6 +1,6 @@
 # StructureClaw 开发文档
 
-最后更新：2026-03-08
+最后更新：2026-03-09
 
 ## 1. 文档目标
 
@@ -48,6 +48,7 @@
 - Chat 已复用 Agent 执行入口：`POST /api/v1/chat/execute`
 - `POST /api/v1/chat/message` 新增 `mode` 开关：`chat/execute/auto`
 - `POST /api/v1/chat/stream` 已支持 `mode`，可流式返回 Agent 执行事件
+- Agent 可观测性增强：执行结果固定包含 `traceId/startedAt/completedAt/durationMs` 与工具耗时指标聚合（总耗时/均值/最大值/按工具汇总）
 - 已新增 Agent 编排回归脚本：协议校验/缺参澄清/校验失败/成功编排/流式事件/文本草模 六类场景
 
 ### 2.3 Core（Python/FastAPI）

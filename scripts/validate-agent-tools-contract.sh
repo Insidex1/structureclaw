@@ -29,7 +29,7 @@ const run = async () => {
   assert(resp.statusCode === 200, 'agent/tools should return 200');
 
   const payload = resp.json();
-  assert(payload.version === '1.2.0', 'protocol version should be 1.2.0');
+  assert(payload.version === '1.3.0', 'protocol version should be 1.3.0');
   assert(Array.isArray(payload.tools), 'tools should be array');
 
   const toolNames = payload.tools.map((t) => t.name);
@@ -55,8 +55,12 @@ const run = async () => {
   assert(reportTool.outputSchema?.properties?.json?.type === 'object', 'report output should include json object');
 
   const runResult = payload.runResultSchema?.properties || {};
+  assert(runResult.startedAt?.type === 'string', 'runResultSchema should include startedAt');
+  assert(runResult.completedAt?.type === 'string', 'runResultSchema should include completedAt');
   assert(runResult.artifacts?.type === 'array', 'runResultSchema should include artifacts array');
   assert(runResult.metrics?.type === 'object', 'runResultSchema should include metrics object');
+  assert(runResult.metrics?.properties?.totalToolDurationMs?.type === 'number', 'metrics should include totalToolDurationMs');
+  assert(runResult.metrics?.properties?.toolDurationMsByName?.type === 'object', 'metrics should include toolDurationMsByName');
 
   await app.close();
   console.log('[ok] agent tools protocol contract');
