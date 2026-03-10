@@ -105,6 +105,48 @@ has_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
+ensure_npm_dependencies() {
+  local project_dir="$1"
+  local project_name="$2"
+  local lockfile="$project_dir/package-lock.json"
+  local node_modules_dir="$project_dir/node_modules"
+  local lock_snapshot="$node_modules_dir/.package-lock.snapshot"
+  local needs_install=0
+
+  if [[ ! -d "$node_modules_dir" ]]; then
+    needs_install=1
+  elif [[ -f "$lockfile" ]]; then
+    if [[ ! -f "$lock_snapshot" ]] || ! cmp -s "$lockfile" "$lock_snapshot"; then
+      needs_install=1
+    fi
+  fi
+
+  if [[ "$needs_install" -eq 1 ]]; then
+    echo "Installing $project_name dependencies..."
+    npm ci --prefix "$project_dir"
+
+    if [[ -f "$lockfile" ]]; then
+      mkdir -p "$node_modules_dir"
+      cp "$lockfile" "$lock_snapshot"
+    fi
+  fi
+}
+
+core_module_available() {
+  local module_name="$1"
+  if [[ ! -x "$ROOT_DIR/core/.venv/bin/python" ]]; then
+    return 1
+  fi
+
+  "$ROOT_DIR/core/.venv/bin/python" - "$module_name" <<'PY' >/dev/null 2>&1
+import importlib.util
+import sys
+
+module = sys.argv[1]
+sys.exit(0 if importlib.util.find_spec(module) else 1)
+PY
+}
+
 is_redis_enabled() {
   local redis_url=""
 
@@ -160,14 +202,23 @@ if [[ "$CORE_ENV_MANAGER" == "uv" ]]; then
   require_command "uv" "Install uv and retry, or rerun without --uv."
 fi
 
-if [[ ! -d "$ROOT_DIR/backend/node_modules" || ! -d "$ROOT_DIR/frontend/node_modules" ]]; then
-  echo "Installing frontend/backend dependencies..."
-  npm ci --prefix "$ROOT_DIR/backend"
-  npm ci --prefix "$ROOT_DIR/frontend"
-fi
+ensure_npm_dependencies "$ROOT_DIR/backend" "backend"
+ensure_npm_dependencies "$ROOT_DIR/frontend" "frontend"
 
-if [[ ! -x "$ROOT_DIR/core/.venv/bin/python" ]]; then
-  echo "Creating Python virtual environment for core ($CORE_PROFILE)..."
+if [[ ! -x "$ROOT_DIR/core/.venv/bin/python" ]] || ! core_module_available "uvicorn"; then
+  recreate_core_venv=0
+  if [[ ! -x "$ROOT_DIR/core/.venv/bin/python" ]]; then
+    echo "Creating Python virtual environment for core ($CORE_PROFILE)..."
+  else
+    echo "Core virtual environment exists but is missing required modules; reinstalling core dependencies ($CORE_PROFILE)..."
+    recreate_core_venv=1
+  fi
+
+  if [[ "$recreate_core_venv" -eq 1 ]]; then
+    echo "Removing stale core virtual environment at core/.venv..."
+    rm -rf "$ROOT_DIR/core/.venv"
+  fi
+
   if [[ "$CORE_ENV_MANAGER" == "uv" ]]; then
     if [[ "$CORE_PROFILE" == "full" ]]; then
       make -C "$ROOT_DIR" setup-core-full-uv
