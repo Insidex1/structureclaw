@@ -4,7 +4,7 @@ AI-assisted structural engineering workspace for AEC workflows.
 
 ## Demo
 
-![StructureClaw Demo](docs/demo.gif)
+https://github.com/user-attachments/assets/031fe757-551d-4775-ab3f-0411037ad5ae
 
 ## What You Get
 
