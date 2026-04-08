@@ -38,6 +38,8 @@ interface BridgeGeometry {
   t?: number;
 }
 
+const BRIDGE_MODEL_WARNING = 'Bridge section defaults are baseline values and should be checked against deck layout and support conditions.';
+
 const BRIDGE_PROFILES: SectionProfile[] = [
   {
     id: 'box-girder',
@@ -152,6 +154,18 @@ function inferBridgeType(message: string, state: DraftState | undefined): Bridge
   return 'i-girder';
 }
 
+function resolveBridgeType(message: string, values: Record<string, unknown>, state?: DraftState): BridgeSectionType {
+  const explicit = parseString(values.sectionType) ?? parseString(values.shape) ?? parseString(values.profile);
+  if (explicit) {
+    const normalized = normalizeSectionText(explicit);
+    const matched = BRIDGE_PROFILES.find((profile) => profile.id === normalized || profile.aliases.some((alias) => normalizeSectionText(alias) === normalized));
+    if (matched) {
+      return matched.id as BridgeSectionType;
+    }
+  }
+  return inferBridgeType(message, state);
+}
+
 function inferBridgeMaterialFamily(message: string, values: Record<string, unknown>): 'steel' | 'concrete' | 'composite' {
   const text = normalizeSectionText(message);
   const explicit = parseString(values.materialFamily)?.toLowerCase();
@@ -222,13 +236,14 @@ function parseBridgeMeta(message: string, values: Record<string, unknown>): {
 
   const spanLengthM = parsePositiveNumber(values.spanLengthM) ?? namedValues.spanLengthM ?? 30;
   const deckWidthM = parsePositiveNumber(values.deckWidthM) ?? namedValues.deckWidthM ?? 12;
-  const girderCount = Math.round(parsePositiveNumber(values.girderCount) ?? namedValues.girderCount ?? 4);
+  const rawGirderCount = Math.round(parsePositiveNumber(values.girderCount) ?? namedValues.girderCount ?? 4);
+  const girderCount = rawGirderCount >= 4 ? rawGirderCount : 4;
   const girderSpacingM = parsePositiveNumber(values.girderSpacingM) ?? namedValues.girderSpacingM ?? (girderCount > 1 ? deckWidthM / (girderCount - 1) : 3);
 
   return {
     spanLengthM,
     deckWidthM,
-    girderCount: girderCount > 0 ? girderCount : 4,
+    girderCount,
     girderSpacingM,
   };
 }
@@ -261,9 +276,7 @@ function buildBridgeModel(state: DraftState): Record<string, unknown> {
       girderSpacingM: meta.girderSpacingM,
     },
     spanLengthM: meta.spanLengthM,
-    warnings: [
-      'Bridge section defaults are baseline values and should be checked against deck layout and support conditions.',
-    ],
+    warnings: [BRIDGE_MODEL_WARNING],
     extras: {
       bridgeType,
       deckWidthM: meta.deckWidthM,
@@ -312,8 +325,8 @@ export const handler: SkillHandler = {
 
   parseProvidedValues(values: Record<string, unknown>): DraftExtraction {
     const message = parseString(values.message) ?? '';
-    const profile = pickBridgeProfile(message, undefined);
-    const bridgeType = inferBridgeType(message, undefined);
+    const bridgeType = resolveBridgeType(message, values);
+    const profile = BRIDGE_PROFILES.find((entry) => entry.id === bridgeType) ?? pickBridgeProfile(message, undefined);
     const geometry = parseBridgeGeometry(message, profile, values);
     const meta = parseBridgeMeta(message, values);
     const materialFamily = inferBridgeMaterialFamily(message, values);

@@ -65,7 +65,8 @@ export function normalizeSectionText(text: string): string {
 }
 
 export function containsAny(text: string, keywords: string[]): boolean {
-  return keywords.some((keyword) => text.includes(normalizeSectionText(keyword)));
+  const normalizedText = normalizeSectionText(text);
+  return keywords.some((keyword) => normalizedText.includes(normalizeSectionText(keyword)));
 }
 
 export function extractNumberAfterAlias(text: string, aliases: string[]): number | undefined {
@@ -113,6 +114,19 @@ export function parsePositiveNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+export function parseFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 export function parseString(value: unknown): string | undefined {
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -129,8 +143,8 @@ export function parsePointList(value: unknown): SectionPoint[] | undefined {
   const points: SectionPoint[] = [];
   for (const entry of value) {
     if (Array.isArray(entry) && entry.length >= 2) {
-      const x = parsePositiveNumber(entry[0]);
-      const y = parsePositiveNumber(entry[1]);
+      const x = parseFiniteNumber(entry[0]);
+      const y = parseFiniteNumber(entry[1]);
       if (x !== undefined && y !== undefined) {
         points.push({ x, y });
       }
@@ -138,8 +152,8 @@ export function parsePointList(value: unknown): SectionPoint[] | undefined {
     }
     if (entry && typeof entry === 'object') {
       const record = entry as Record<string, unknown>;
-      const x = parsePositiveNumber(record.x ?? record.X ?? record[0]);
-      const y = parsePositiveNumber(record.y ?? record.Y ?? record[1]);
+      const x = parseFiniteNumber(record.x ?? record.X ?? record[0]);
+      const y = parseFiniteNumber(record.y ?? record.Y ?? record[1]);
       if (x !== undefined && y !== undefined) {
         points.push({ x, y });
       }

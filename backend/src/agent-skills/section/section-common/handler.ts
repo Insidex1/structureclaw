@@ -40,6 +40,8 @@ interface SectionGeometry {
   t?: number;
 }
 
+const COMMON_MODEL_WARNING = 'The generated section model is a baseline skeleton and should be validated against project-specific rules.';
+
 const COMMON_SECTION_PROFILES: SectionProfile[] = [
   {
     id: 'h-beam',
@@ -268,8 +270,8 @@ function buildCommonModel(state: DraftState): Record<string, unknown> {
     materialGrade: parseString(state.materialGrade) ?? 'Q355',
     materialName: { zh: 'Q355 钢材', en: 'Q355 steel' },
     geometry: geometry as Record<string, unknown>,
-    spanLengthM: parsePositiveNumber(state.spanLengthM ?? state.lengthM ?? state.loadPositionM) ?? 6,
-    warnings: ['The generated section model is a baseline skeleton and should be validated against project-specific rules.'],
+    spanLengthM: parsePositiveNumber(state.spanLengthM ?? state.lengthM) ?? 6,
+    warnings: [COMMON_MODEL_WARNING],
     extras: {
       profileLabel: profile.label,
       profileDescription: profile.description,
@@ -278,11 +280,11 @@ function buildCommonModel(state: DraftState): Record<string, unknown> {
 }
 
 function buildCommonNarrative(input: SkillReportNarrativeInput): string {
-  const sectionType = parseString(input.message) ?? 'common';
+  const userIntent = parseString(input.message) ?? 'section request';
   if (input.locale === 'zh') {
     return [
       '## 通用截面说明',
-      `- 当前截面路线：${sectionType}。`,
+      `- 当前用户意图：${userIntent}。`,
       '- 已给出可直接进入补参或初步校核的模型骨架。',
       '- 若后续需要更严格的规范校核，建议补充构件角色、设计荷载与控制工况。',
     ].join('\n');
@@ -290,7 +292,7 @@ function buildCommonNarrative(input: SkillReportNarrativeInput): string {
 
   return [
     '## Common Section Notes',
-    `- Current section route: ${sectionType}.`,
+    `- Current user intent: ${userIntent}.`,
     '- A model skeleton is ready for follow-up parameter completion or a first-pass check.',
     '- For stricter validation, add member role, design loads, and governing load cases.',
   ].join('\n');
@@ -326,10 +328,11 @@ export class SectionCommonHandler implements SkillHandler {
 
   parseProvidedValues(values: Record<string, unknown>): DraftExtraction {
     const message = parseString(values.message) ?? '';
-    const profile = pickCommonProfile(message, undefined);
-    const geometry = parseSectionGeometry(message, profile, values);
+    const normalizedMessage = normalizeSectionText(message);
     const sectionType = extractSectionTypeFromValues(values, message);
-    const role = normalizeRole(values.memberRole, inferCommonRole(message, profile));
+    const profile = COMMON_SECTION_PROFILES.find((entry) => entry.id === sectionType) ?? pickCommonProfile(message, undefined);
+    const geometry = parseSectionGeometry(message, profile, values);
+    const role = normalizeRole(values.memberRole, inferCommonRole(normalizedMessage, profile));
 
     return {
       skillId: 'section-common',

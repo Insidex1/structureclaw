@@ -46,6 +46,8 @@ interface IrregularGeometry {
   openingPosition?: number;
 }
 
+const IRREGULAR_MODEL_WARNING = 'Irregular sections should be validated against fabrication limits, local buckling, and the exact outline definition.';
+
 const IRREGULAR_PROFILES: SectionProfile[] = [
   {
     id: 'tapered-i',
@@ -162,6 +164,18 @@ function inferIrregularType(message: string, state: DraftState | undefined): Irr
     return 'asymmetric-built-up';
   }
   return 'polygon-custom';
+}
+
+function resolveIrregularType(message: string, values: Record<string, unknown>, state?: DraftState): IrregularSectionType {
+  const explicit = parseString(values.sectionType) ?? parseString(values.shape) ?? parseString(values.profile);
+  if (explicit) {
+    const normalized = normalizeSectionText(explicit);
+    const matched = IRREGULAR_PROFILES.find((profile) => profile.id === normalized || profile.aliases.some((alias) => normalizeSectionText(alias) === normalized));
+    if (matched) {
+      return matched.id as IrregularSectionType;
+    }
+  }
+  return inferIrregularType(message, state);
 }
 
 function inferIrregularMaterialFamily(message: string, values: Record<string, unknown>): 'steel' | 'concrete' | 'composite' | 'timber' {
@@ -301,9 +315,7 @@ function buildIrregularModel(state: DraftState): Record<string, unknown> {
     geometry,
     outlinePoints: meta.outlinePoints,
     spanLengthM: meta.spanLengthM,
-    warnings: [
-      'Irregular sections should be validated against fabrication limits, local buckling, and the exact outline definition.',
-    ],
+    warnings: [IRREGULAR_MODEL_WARNING],
     extras: {
       irregularType: sectionType,
       rawGeometry,
@@ -363,8 +375,8 @@ export const handler: SkillHandler = {
 
   parseProvidedValues(values: Record<string, unknown>): DraftExtraction {
     const message = parseString(values.message) ?? '';
-    const profile = pickIrregularProfile(message, undefined);
-    const sectionType = inferIrregularType(message, undefined);
+    const sectionType = resolveIrregularType(message, values);
+    const profile = IRREGULAR_PROFILES.find((entry) => entry.id === sectionType) ?? pickIrregularProfile(message, undefined);
     const geometry = parseIrregularGeometry(message, profile, values);
     const meta = parseIrregularMeta(message, values);
     const materialFamily = inferIrregularMaterialFamily(message, values);
