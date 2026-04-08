@@ -367,61 +367,80 @@ export function mergeSectionState(existing: DraftState | undefined, patch: Draft
 export function buildSectionModel(options: SectionModelOptions): Record<string, unknown> {
   const now = Date.now();
   const spanLengthM = options.spanLengthM ?? 6;
-  const spanLengthMM = Math.round(spanLengthM * 1000);
   const properties = calculateProfileProperties(options.sectionType, options.geometry, options.outlinePoints);
   const warnings = [...(options.warnings ?? []), ...properties.warnings];
+  const areaM2 = Math.max((properties.areaMM2 ?? 10000) * 1e-6, 1e-4);
+  const iyM4 = Math.max((properties.iyMM4 ?? 1e8) * 1e-12, 1e-8);
+  const izM4 = Math.max((properties.ixMM4 ?? 1e8) * 1e-12, 1e-8);
+  const shearModulus = 79000;
+
+  const baseRestraints = options.memberRole === 'column'
+    ? [true, true, true, true, true, true]
+    : [true, true, true, false, false, false];
 
   return {
-    id: `section-model-${options.skillId}-${now}`,
-    schemaVersion: '1.0.0',
-    domain: 'section',
-    skillId: options.skillId,
-    family: options.family,
-    title: options.title,
-    sectionType: options.sectionType,
-    memberRole: options.memberRole,
-    material: {
-      id: `mat-${options.materialGrade.toLowerCase()}`,
-      grade: options.materialGrade,
-      name: options.materialName,
-      family: options.materialFamily ?? 'steel',
-      densityKgM3: options.materialDensityKgM3 ?? 7850,
-    },
-    geometry: {
-      ...options.geometry,
-      spanLengthM,
-      spanLengthMM,
-    },
-    outlinePoints: options.outlinePoints,
-    properties,
-    warnings,
-    notes: options.notes,
+    schema_version: '1.0.0',
+    unit_system: 'SI',
     nodes: [
-      { id: 'n1', xMM: 0, yMM: 0, zMM: 0 },
-      { id: 'n2', xMM: spanLengthMM, yMM: 0, zMM: 0 },
+      { id: 'N1', x: 0, y: 0, z: 0, restraints: baseRestraints },
+      { id: 'N2', x: spanLengthM, y: 0, z: 0 },
     ],
-    members: [
+    elements: [
       {
-        id: 'm1',
-        role: options.memberRole,
-        sectionId: 'sec-1',
-        nodes: ['n1', 'n2'],
+        id: 'E1',
+        type: 'beam',
+        nodes: ['N1', 'N2'],
+        material: 'M1',
+        section: 'S1',
       },
     ],
+    materials: [{
+      id: 'M1',
+      name: options.materialGrade,
+      E: 205000,
+      nu: 0.3,
+      rho: options.materialDensityKgM3 ?? 7850,
+      fy: 345,
+    }],
     sections: [
       {
-        id: 'sec-1',
-        type: options.sectionType,
-        geometry: options.geometry,
-        outlinePoints: options.outlinePoints,
-        properties,
+        id: 'S1',
+        name: options.sectionType,
+        type: 'beam',
+        properties: {
+          A: areaM2,
+          Iy: iyM4,
+          Iz: izM4,
+          J: Math.max(Math.min(iyM4, izM4), 1e-8),
+          G: shearModulus,
+        },
       },
     ],
-    supports: [
-      { nodeId: 'n1', type: options.memberRole === 'column' ? 'fixed' : 'pinned' },
-      { nodeId: 'n2', type: options.memberRole === 'column' ? 'fixed' : 'roller' },
-    ],
+    load_cases: [{ id: 'LC1', type: 'other', loads: [] }],
+    load_combinations: [{ id: 'ULS', factors: { LC1: 1.0 } }],
     metadata: {
+      id: `section-model-${options.skillId}-${now}`,
+      domain: 'section',
+      skillId: options.skillId,
+      family: options.family,
+      title: options.title,
+      sectionType: options.sectionType,
+      memberRole: options.memberRole,
+      material: {
+        id: `mat-${options.materialGrade.toLowerCase()}`,
+        grade: options.materialGrade,
+        name: options.materialName,
+        family: options.materialFamily ?? 'steel',
+        densityKgM3: options.materialDensityKgM3 ?? 7850,
+      },
+      geometry: {
+        ...options.geometry,
+        spanLengthM,
+      },
+      outlinePoints: options.outlinePoints,
+      sectionProperties: properties,
+      warnings,
+      notes: options.notes,
       createdAt: new Date(now).toISOString(),
       sourceSkillId: options.skillId,
       ...options.extras,

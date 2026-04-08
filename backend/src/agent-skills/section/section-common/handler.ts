@@ -333,6 +333,7 @@ export class SectionCommonHandler implements SkillHandler {
     const profile = COMMON_SECTION_PROFILES.find((entry) => entry.id === sectionType) ?? pickCommonProfile(message, undefined);
     const geometry = parseSectionGeometry(message, profile, values);
     const role = normalizeRole(values.memberRole, inferCommonRole(normalizedMessage, profile));
+    const spanLengthM = parsePositiveNumber(values.spanLengthM ?? values.lengthM) ?? 6;
 
     return {
       skillId: 'section-common',
@@ -341,6 +342,7 @@ export class SectionCommonHandler implements SkillHandler {
       sectionType,
       memberRole: role,
       materialGrade: buildCommonMaterialGrade(values, message),
+      spanLengthM,
       geo: geometry,
       h: geometry.h,
       b: geometry.b,
@@ -362,6 +364,8 @@ export class SectionCommonHandler implements SkillHandler {
       sectionType: ctx.llmDraftPatch?.sectionType ?? ctx.currentState?.sectionType ?? profile.id,
       memberRole: ctx.currentState?.memberRole ?? profile.defaultMemberRole,
       materialGrade: ctx.currentState?.materialGrade,
+      spanLengthM: ctx.llmDraftPatch?.spanLengthM ?? ctx.currentState?.spanLengthM,
+      lengthM: ctx.currentState?.lengthM,
       outlinePoints: ctx.llmDraftPatch?.outlinePoints ?? ctx.currentState?.outlinePoints,
     });
 
@@ -533,8 +537,8 @@ export class SectionCommonHandler implements SkillHandler {
             zh: '如果你希望直接生成一个可检查的构件骨架，请提供构件长度（m）。',
             en: 'If you want a directly checkable member skeleton, please provide the member length in meters.',
           },
-          false,
-          false,
+          criticalMissing.includes(paramKey),
+          criticalMissing.includes(paramKey),
           state.spanLengthM ?? 6,
           'm',
         );

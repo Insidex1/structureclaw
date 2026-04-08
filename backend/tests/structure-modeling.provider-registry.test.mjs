@@ -21,7 +21,9 @@ describe('structure-type provider registry', () => {
       'beam',
       'generic',
     ]);
-    expect(ids).not.toEqual(expect.arrayContaining(['section-common', 'section-bridge', 'section-irregular']));
+    expect(ids).not.toContain('section-common');
+    expect(ids).not.toContain('section-bridge');
+    expect(ids).not.toContain('section-irregular');
   });
 
   test('should preserve explicit skill selection semantics through the provider wrapper', async () => {
