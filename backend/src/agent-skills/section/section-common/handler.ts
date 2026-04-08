@@ -40,16 +40,6 @@ interface SectionGeometry {
   t?: number;
 }
 
-const MATERIAL_Q355 = {
-  id: 'mat-q355',
-  type: 'steel',
-  name: 'Q355',
-  density: 7850,
-  elasticModulus: 206000,
-  poissonRatio: 0.3,
-  yieldStrength: 355
-};
-
 const COMMON_SECTION_PROFILES: SectionProfile[] = [
   {
     id: 'h-beam',
