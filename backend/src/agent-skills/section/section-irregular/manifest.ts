@@ -14,7 +14,7 @@ export const manifest: SkillManifest = {
   },
   triggers: ['不规则', '变截面', '异形', '开孔', 'tapered', 'haunch', 'asymmetric', 'custom', 'polygon', 'outline', '自定义'],
   stages: ['intent', 'draft', 'analysis', 'design'],
-  autoLoadByDefault: true,
+  autoLoadByDefault: false,
   structuralTypeKeys: ['unknown', 'beam', 'frame', 'bridge'],
   capabilities: ['section.detect', 'section.irregular-model', 'section.outline', 'section.validate'],
   enabledTools: ['draft_model', 'update_model', 'validate_model'],

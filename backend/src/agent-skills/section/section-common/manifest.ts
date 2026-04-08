@@ -14,7 +14,7 @@ export const manifest: SkillManifest = {
   },
   triggers: ['截面', '工字钢', 'H型钢', '钢框架', '型钢', 'section', 'section design', 'profile'],
   stages: ['intent', 'draft', 'analysis', 'design'],
-  autoLoadByDefault: true,
+  autoLoadByDefault: false,
   structuralTypeKeys: ['beam', 'frame', 'steel-frame', 'bridge'],
   capabilities: ['section.detect', 'section.draft', 'section.model', 'section.validate'],
   enabledTools: ['draft_model', 'update_model', 'validate_model'],

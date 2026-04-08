@@ -14,7 +14,7 @@ export const manifest: SkillManifest = {
   },
   triggers: ['桥梁', '桥梁截面', '钢箱梁', '箱梁', '桥面', '主梁', 'girder', 'bridge', 'bridge girder', 'plate girder', 'box girder'],
   stages: ['intent', 'draft', 'analysis', 'design'],
-  autoLoadByDefault: true,
+  autoLoadByDefault: false,
   structuralTypeKeys: ['bridge', 'beam', 'frame'],
   capabilities: ['section.detect', 'section.bridge-model', 'section.draft', 'section.validate', 'section.analysis-handoff'],
   enabledTools: ['draft_model', 'update_model', 'validate_model', 'run_analysis'],

@@ -34,5 +34,8 @@ describe('section skill loader', () => {
     expect(common?.manifest.domain).toBe('section');
     expect(bridge?.manifest.domain).toBe('section');
     expect(irregular?.manifest.domain).toBe('section');
+    expect(common?.manifest.autoLoadByDefault).toBe(false);
+    expect(bridge?.manifest.autoLoadByDefault).toBe(false);
+    expect(irregular?.manifest.autoLoadByDefault).toBe(false);
   });
 });
