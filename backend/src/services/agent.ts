@@ -1165,8 +1165,8 @@ export class AgentService {
         conversationId: sessionKey,
       });
     } catch (error: any) {
-      const plannerErrorCode = typeof error?.message === 'string' ? error.message : 'LLM_PLANNER_UNAVAILABLE';
-      const plannerResponse = plannerErrorCode === 'LLM_PLANNER_INVALID_RESPONSE'
+      const plannerErrorMessage = typeof error?.message === 'string' ? error.message : 'LLM_PLANNER_UNAVAILABLE';
+      let plannerResponse = plannerErrorMessage === 'LLM_PLANNER_INVALID_RESPONSE'
         ? this.localize(
           locale,
           '当前无法可靠解析大模型的下一步决策结果，本轮不会自动进入工程技能或工具链。请重试，或改用明确的交互/执行入口。',
@@ -1177,6 +1177,13 @@ export class AgentService {
           '当前自动路由依赖大模型规划，但规划器不可用，因此本轮不会退回任何确定性分流。请先恢复 LLM planner，或改用明确的交互/执行入口。',
           'Automatic routing now depends on the LLM planner. The planner is unavailable, so this turn will not fall back to deterministic routing. Restore the LLM planner or use an explicit interactive/tool entrypoint.',
         );
+      if (plannerErrorMessage.startsWith('LLM_PLANNER_UNAVAILABLE:')) {
+        plannerResponse = this.localize(
+          locale,
+          `LLM配置出错：${this.extractPlannerErrorDetail(plannerErrorMessage, locale)}`,
+          `LLM configuration error: ${this.extractPlannerErrorDetail(plannerErrorMessage, locale)}`,
+        );
+      }
       return this.finalizeBlockedRunResult({
         params,
         traceId,
@@ -1185,6 +1192,7 @@ export class AgentService {
         locale,
         orchestrationMode,
         skillIds,
+        selectedSkillIds: skillIds,
         plan,
         toolCalls,
         sessionKey,
@@ -3988,6 +3996,14 @@ export class AgentService {
       return status ? `HTTP ${status}: ${String(unknownError.message)}` : String(unknownError.message);
     }
     return 'Unknown error';
+  }
+
+  private extractPlannerErrorDetail(message: string, locale: AppLocale): string {
+    const marker = 'LLM_PLANNER_UNAVAILABLE:';
+    if (message.startsWith(marker)) {
+      return message.slice(marker.length).trim() || this.localize(locale, 'LLM 不可用', 'LLM unavailable');
+    }
+    return this.localize(locale, 'LLM 不可用', 'LLM unavailable');
   }
 
   private extractHttpStatus(error: unknown): number | undefined {

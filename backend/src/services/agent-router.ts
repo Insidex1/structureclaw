@@ -31,6 +31,66 @@ export type AssessInteractionNeedsFn = (
 export type HasEmptySkillSelectionFn = (skillIds?: string[]) => boolean;
 export type HasActiveToolFn = (activeToolIds: ActiveToolSet, toolId: string) => boolean;
 
+function localize(locale: AppLocale, zh: string, en: string): string {
+  return locale === 'zh' ? zh : en;
+}
+
+function extractHttpStatus(error: unknown): number | undefined {
+  const status = (error as any)?.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function stringifyError(error: unknown): string {
+  const unknownError = error as any;
+  const status = extractHttpStatus(error);
+  if (unknownError?.response?.data) {
+    const payload = typeof unknownError.response.data === 'string'
+      ? unknownError.response.data
+      : JSON.stringify(unknownError.response.data);
+    return status ? `HTTP ${status}: ${payload}` : payload;
+  }
+  if (unknownError?.message) {
+    return status ? `HTTP ${status}: ${String(unknownError.message)}` : String(unknownError.message);
+  }
+  return 'Unknown error';
+}
+
+function sanitizePlannerErrorDetail(detail: string): string {
+  const collapsed = detail.replace(/\s+/gu, ' ').trim();
+  if (!collapsed) {
+    return '';
+  }
+  return collapsed.length > 160 ? `${collapsed.slice(0, 157)}...` : collapsed;
+}
+
+function describeLlmPlannerError(error: unknown, locale: AppLocale): string {
+  const status = extractHttpStatus(error);
+  const raw = stringifyError(error);
+  const normalizedRaw = sanitizePlannerErrorDetail(raw.replace(/^HTTP \d+:\s*/u, ''));
+  const lowerRaw = normalizedRaw.toLowerCase();
+
+  if (
+    status === 403
+    && (lowerRaw.includes('not available in your region') || lowerRaw.includes('model_not_available'))
+  ) {
+    return localize(locale, 'LLM 403 / 模型区域不可用', 'LLM 403 / model unavailable in your region');
+  }
+  if (status === 401) {
+    return localize(locale, 'LLM 401 / API Key 无效或未授权', 'LLM 401 / invalid or unauthorized API key');
+  }
+  if (status === 429) {
+    return localize(locale, 'LLM 429 / 请求限流或额度不足', 'LLM 429 / rate limited or quota exceeded');
+  }
+  if (typeof status === 'number') {
+    return localize(
+      locale,
+      `LLM ${status} / ${normalizedRaw || '请求失败'}`,
+      `LLM ${status} / ${normalizedRaw || 'request failed'}`,
+    );
+  }
+  return normalizedRaw || localize(locale, 'LLM 不可用', 'LLM unavailable');
+}
+
 // ---------------------------------------------------------------------------
 // extractJsonObject
 // ---------------------------------------------------------------------------
@@ -204,18 +264,19 @@ export async function planNextStepWithLlm(
   assessInteractionNeeds: AssessInteractionNeedsFn,
 ): Promise<AgentNextStepPlan> {
   if (!llm) {
-    throw new Error('LLM_PLANNER_UNAVAILABLE');
+    throw new Error(`LLM_PLANNER_UNAVAILABLE:${localize(options.locale, 'LLM 不可用', 'LLM unavailable')}`);
   }
 
-  const snapshot = await buildPlannerContextSnapshot(options, assessInteractionNeeds);
-  const allowedKinds: AgentPlanKind[] = Array.isArray(options.allowedKinds) && options.allowedKinds.length > 0
-    ? options.allowedKinds
-    : ['reply', 'ask', 'tool_call'];
-  const allowToolCall = allowedKinds.includes('tool_call');
-  const availableToolIds = snapshot.availableToolIds.filter((toolId): toolId is AgentToolName => (
-    ['draft_model', 'update_model', 'convert_model', 'validate_model', 'run_analysis', 'run_code_check', 'generate_report'] as string[]
-  ).includes(toolId));
-  const prompt = [
+  try {
+    const snapshot = await buildPlannerContextSnapshot(options, assessInteractionNeeds);
+    const allowedKinds: AgentPlanKind[] = Array.isArray(options.allowedKinds) && options.allowedKinds.length > 0
+      ? options.allowedKinds
+      : ['reply', 'ask', 'tool_call'];
+    const allowToolCall = allowedKinds.includes('tool_call');
+    const availableToolIds = snapshot.availableToolIds.filter((toolId): toolId is AgentToolName => (
+      ['draft_model', 'update_model', 'convert_model', 'validate_model', 'run_analysis', 'run_code_check', 'generate_report'] as string[]
+    ).includes(toolId));
+    const prompt = [
     'You are the planning layer for StructureClaw.',
     'Decide the single best next step for the latest user message.',
     'Available skills and tools constrain what can be invoked, but they do not force invocation.',
@@ -253,33 +314,33 @@ export async function planNextStepWithLlm(
     `Locale: ${options.locale}`,
     `User message: ${message}`,
     `Planner context: ${JSON.stringify(snapshot)}`,
-  ].join('\n');
+    ].join('\n');
 
-  let raw: string;
-  try {
     const aiMessage = await llm.invoke(prompt);
-    raw = typeof aiMessage.content === 'string'
+    const raw = typeof aiMessage.content === 'string'
       ? aiMessage.content
       : JSON.stringify(aiMessage.content);
-  } catch {
-    throw new Error('LLM_PLANNER_UNAVAILABLE');
+    const normalized = parsePlannerResponse(raw, allowedKinds)
+      || await repairPlannerResponse(llm, raw, {
+        locale: options.locale,
+        allowedKinds,
+        availableToolIds,
+      });
+    if (!normalized) {
+      throw new Error('LLM_PLANNER_INVALID_RESPONSE');
+    }
+    return {
+      kind: normalized.kind,
+      replyMode: normalized.replyMode,
+      planningDirective: 'auto',
+      rationale: 'llm',
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'LLM_PLANNER_INVALID_RESPONSE') {
+      throw error;
+    }
+    throw new Error(`LLM_PLANNER_UNAVAILABLE:${describeLlmPlannerError(error, options.locale)}`);
   }
-
-  const normalized = parsePlannerResponse(raw, allowedKinds)
-    || await repairPlannerResponse(llm, raw, {
-      locale: options.locale,
-      allowedKinds,
-      availableToolIds,
-    });
-  if (!normalized) {
-    throw new Error('LLM_PLANNER_INVALID_RESPONSE');
-  }
-  return {
-    kind: normalized.kind,
-    replyMode: normalized.replyMode,
-    planningDirective: 'auto',
-    rationale: 'llm',
-  };
 }
 
 // ---------------------------------------------------------------------------
